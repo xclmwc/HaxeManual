@@ -13,7 +13,7 @@ Starting from Haxe 3.0, you can get the list of defined compiler metadata by run
 	\multicolumn{3}{|c|}{Global metadata} \\ \hline
 	Metadata &  Description  &  Platform \\ \hline
 	@:abi & Function ABI/calling convention  & cpp \\
-	@:abstract &  Sets the underlying class implementation as \tref{abstract type}{types-abstract}  &  cs  java \\
+	@:abstract &  Sets the underlying class implementation as 'abstract'  &  cs  java \\
 	@:access \_(Target path)\_  &   Forces private access to package  type or field,  see \tref{Access Control}{lf-access-control}  &  all \\
 	@:allow \_(Target path)\_  &   Allows private access from package  type or field,  see \tref{Access Control}{lf-access-control}  &  all \\
 	@:analyzer & Used to configure the static analyzer  &  all \\
@@ -51,7 +51,7 @@ Starting from Haxe 3.0, you can get the list of defined compiler metadata by run
 	@:font \_(TTF path Range String)\_  &  Embeds the given TrueType font into the class (must extend \expr{flash.text.Font})  &  flash \\
 	@:forward \_(List of field names)\_  &  \tref{Forwards field access}{types-abstract-forward} to underlying type  &  all \\
 	@:from   &  Specifies that the field of the abstract is a cast operation from the type identified in the function. See \tref{Implicit Casts}{types-abstract-implicit-casts}  &  all \\
-	@:functionCode  &     &  cpp \\
+	@:functionCode  &     &  cs cpp \\
 	@:functionTailCode  &    &  cpp \\
 	@:generic &  Marks a class or class field as \tref{generic}{type-system-generic} so each type parameter combination generates its own type/field  &  all \\
 	@:genericBuild  &  Builds instances of a type using the specified macro   &  all \\
@@ -754,10 +754,9 @@ class D { } // Type-level disable
 The static analyzer currently comes with the following modules. Unless noted otherwise they are enabled if \ic{-D analyzer} is used.
 
 \begin{description}
-\item[const_propagation]: Implements sparse conditional constant propagation to promote values that are known at compile-time to usage places. Also detects dead branches.
-\item[copy_propagation]: Detects local variables that alias other local variables and replaces them accordingly.
-\item[local_dce]: Detects and removes unused local variables.
-\item[fusion]: Moves variable expressions to its usage in case of single-occurrence. Disabled on \target{Flash} and \target{Java}.
-\item[purity_inference]: Infers if fields are ``pure'', i.e. do not have any side-effects. This can improve the effect of the fusion module.
-\item[unreachable_code]: Reports unreachable code.
+\item[\ic{const_propagation}]: Implements sparse conditional constant propagation to promote values that are known at compile-time to usage places. Also detects dead branches.
+\item[\ic{copy_propagation}]: Detects local variables that alias other local variables and replaces them accordingly.
+\item[\ic{local_dce}]: Detects and removes unused local variables.
+\item[\ic{fusion}]: Moves variable expressions to its usage in case of single-occurrence. Disabled on \target{Flash} and \target{Java}.
+\item[\ic{purity_inference}]: Infers if fields are ``pure'', i.e. do not have any side-effects. This can improve the effect of the fusion module.
 \end{description}

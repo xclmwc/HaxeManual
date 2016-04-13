@@ -63,6 +63,9 @@ matrix:
     - env: TARGET=cpp
       haxe: development
 
+    - env: TARGET=cppia
+      haxe: development
+
     - env: TARGET=cs
       haxe: 3.2.0
       addons: {apt: {packages: [mono-devel, mono-mcs]}}
@@ -78,10 +81,15 @@ matrix:
     - env: TARGET=python
       haxe: 3.2.0
     - env: TARGET=python
+      haxe: development
+
+    - env: TARGET=hl
+      haxe: development
+
+    - env: TARGET=lua
       haxe: development
 
 install:
-  - haxelib install hxcpp > /dev/null
   - haxelib install hxcs > /dev/null
   - haxelib install hxjava > /dev/null
   - haxelib install random > /dev/null

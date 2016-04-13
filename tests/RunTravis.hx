@@ -12,9 +12,12 @@ abstract Target(String) from String to String
 	var Js = "js";
 	var Neko = "neko";
 	var Cpp = "cpp";
+	var Cppia = "cppia";
 	var Cs = "cs";
 	var Java = "java";
 	var Python = "python";
+	var Hl = "hl";
+	var Lua = "lua";
 }
 
 @:enum
@@ -118,7 +121,7 @@ class RunTravis
 	public static function main():Void {
 		var target:Target = Sys.args()[0];
 		if (target == null) {
-			Sys.println("No TARGET defined. Defaulting to neko.");
+			Sys.println("No target argument found. Defaulting to neko.");
 			target = Target.Neko;
 		}
 
@@ -130,8 +133,30 @@ class RunTravis
 		helperFile = File.getContent("Helper.hx");
 	
 		Sys.exit(getResult([
+			setupHxcpp(target),
 			buildExamples(target, Sys.args().slice(1))
 		]));
+	}
+
+	static function setupHxcpp(target:Target):ExitCode {
+		if (target != Target.Cpp)
+			return ExitCode.Success;
+
+		#if (haxe_ver >= "3.3")
+		var hxcppDir = Sys.getEnv("HOME") + "/haxe/lib/hxcpp/git/";
+		return getResult([
+			Sys.command("haxelib", ["git", "hxcpp", "https://github.com/HaxeFoundation/hxcpp"]),
+			runCommandInDir(hxcppDir + "tools/run", "haxe", ["compile.hxml"]),
+			runCommandInDir(hxcppDir + "tools/hxcpp", "haxe", ["compile.hxml"]),
+			runCommandInDir(hxcppDir + "project", "neko", ["build.n"])
+		]);
+		#else
+		return Sys.command("haxelib", ["install", "hxcpp"]);
+		#end
+	}
+
+	static function runCommandInDir(dir:String, cmd:String, args:Array<String>):ExitCode {
+		return runInDir(dir, function() return Sys.command(cmd, args));
 	}
 
 	static function buildExamples(target:Target, ?included:Array<String>):ExitCode {
