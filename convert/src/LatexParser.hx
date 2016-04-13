@@ -84,12 +84,14 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 	var listMode:Array<ListMode>;
 	var lastLabelTarget:LabelKind;
 	var input:byte.ByteData;
+	var config:Config;
 
-	public function new(input, sourceName) {
+	public function new(input, sourceName, config:Config) {
 		var lexer = new LatexLexer(input, sourceName);
 		var source = new hxparse.LexerTokenSource(lexer, LatexLexer.tok);
 		super(source);
 		this.input = input;
+		this.config = config;
 		buffer = new StringBuf();
 		todos = [];
 		sections = [];
@@ -240,12 +242,18 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 					lastSection.state = state;
 				case [TCustomCommand("flag"), key = inBraces(text), value = inBraces(text)]:
 					lastSection.flags[key] = value;
+				case [TCustomCommand("maintainer"), s = inBraces(text)]:
+					buffer.add('Written and maintained by $s');
+				case [TCustomCommand("subtoc")]:
+					buffer.add("~subtoc~");
 				// section
 				case [TCommand(CPart), s = inBraces(text)]:
 					// TODO: handle this
 				case [TCommand(CChapter), s = inBraces(text)]:
 					sections.push(mkSection(s, null, sections.length + 1));
-				case [TCommand(CSection), s = inBraces(text)]:
+				case [TCustomCommand("article"), s = inBraces(text)]:
+					sections.push(mkSection(s, null, sections.length + 1));
+				case [TCommand(CSection), _ = popt(star), s = inBraces(text)]:
 					var sec = sections[sections.length - 1];
 					sec.sub.push(mkSection(s, sec, sec.sub.length + 1));
 				case [TCommand(CSubsection), s = inBraces(text)]:
@@ -254,7 +262,7 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 					sec.sub.push(mkSection(s, sec, sec.sub.length + 1));
 				case [TCommand(CParagraph), s = inBraces(text)]:
 					lastLabelTarget = Paragraph(lastSection, s);
-					buffer.add('###### $s');
+					buffer.add('##### $s');
 				// misc
 				case [TCommand(CMulticolumn), TBrOpen, _ = text(), TBrClose, TBrOpen, _ = text(), TBrClose, TBrOpen, s = text(), TBrClose]:
 					buffer.add('\n##### $s\n');
@@ -288,7 +296,7 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 					"&";
 				}
 			case [TCommand(CTextasciitilde)]: "~";
-			case [TCommand(CTextbackslash)]: "\\\\";
+			case [TCommand(CTextbackslash)]: "\\";
 			case [TCommand(CSlash)]: "/";
 			case [TCommand(CEmph), s = inBraces(text)]: '**$s**';
 			case [TCommand(CTextwidth)]: "";
@@ -347,6 +355,7 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 			case [TNewline]: tableMode || listMode.length > 0 ? "" : "\n";
 			case [TDoubleBackslash]: "\n";
 			case [TCommand(CTextasciicircum)]: "^";
+			case [s = inBraces(text)]: s;
 		}
 	}
 
@@ -436,6 +445,13 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 		}
 	}
 
+	function star() {
+		return switch stream {
+			case [TText("*")]:
+				true;
+		}
+	}
+
 	function popt<T>(f:Void->T):Null<T> {
 		return switch stream {
 			case [v = f()]: v;
@@ -448,7 +464,7 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 			lastSection.content = getBuffer();
 			buffer = new StringBuf();
 		}
-		var id = (parent != null ? parent.id + "." : "") + index;
+		var id = config.omitIds ? "" : (parent != null ? parent.id + "." : "") + index;
 		var source = {
 			file: stream.curPos().psource,
 			lineMin: stream.curPos().getLinePosition(input).lineMin,
@@ -460,7 +476,7 @@ class LatexParser extends Parser<LexerTokenSource<LatexToken>, LatexToken> imple
 			content: "",
 			sub: [],
 			parent: parent,
-			index:index,
+			index: index,
 			id: id,
 			state: New,
 			source: source,

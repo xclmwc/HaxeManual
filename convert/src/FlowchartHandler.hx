@@ -8,7 +8,7 @@ using StringTools;
 
 class FlowchartHandler {
 
-	static public function handle(s:String) {
+	static public function handle(config:Config, s:String) {
 		var envargRegexp = ~/{(.+)}{(.+)}/;
 		if (!envargRegexp.match(s)) throw "Custom environment definition doesn't match expected argument template.";
 		var envlabel = envargRegexp.matched(1);
@@ -17,13 +17,15 @@ class FlowchartHandler {
 		var targetName = envlabel;
 		latexCompile(Resource.getString("tikzTemplate"), "\\begin{flowchart}" + s + "\\end{flowchart}", targetPath, targetName);
 		var filePath = targetPath + targetName + ".png";
-		var relativePath = "../../" + filePath;
-		#if epub
-		return '![$envtitle]($filePath)';
-		#else
-		return '<img src="$relativePath" alt="$envtitle" title="$envtitle" />\n\n_Figure: ${envtitle}_';
-		#end
+		var relativePath = "../../../HaxeManual/" + filePath;
+		switch (config.outputMode) {
+			case EPub | Mobi:
+				return '![$envtitle]($filePath)';
+			case Markdown:
+				return '<img src="$relativePath" alt="$envtitle" title="$envtitle" />\n\n_Figure: ${envtitle}_';
+		}
 	}
+
 	static function latexCompile(template:String, content:String, targetPath:String, targetName:String) {
 		// TODO: error checking for latex / mudraw
 		#if !(compileEnv || recompileEnv)
@@ -68,8 +70,10 @@ class FlowchartHandler {
 		fout.close();
 		//Sys.command("pdflatex", ["-interaction=nonstopmode", Path.withoutDirectory(texFile)]);
 		//Sys.command("convert", ["-density", "120", tempName + ".pdf", tempName + ".png"]);
-		Sys.command("xelatex", ["-interaction=nonstopmode", Path.withoutDirectory(texFile)]);
-		Sys.command("mudraw", ["-r", "110", "-c", "rgba", "-o", tempName + ".png", tempName + ".pdf"]);
+		if (Sys.command("xelatex", ["-interaction=nonstopmode", Path.withoutDirectory(texFile)]) != 0)
+			throw "xelatex failed";
+		if (Sys.command("mudraw", ["-r", "110", "-c", "rgba", "-o", tempName + ".png", tempName + ".pdf"]) != 0)
+			throw "mudraw failed";
 		Sys.setCwd(cwd);
 
 		var imagePath = tempDir + tempName + ".png";

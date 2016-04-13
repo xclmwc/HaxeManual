@@ -12,35 +12,78 @@ typedef SectionInfo = {
 
 class Main {
 
-	static inline var linkPrefix = #if epub "#" #else "" #end;
-
 	static function main() {
-		new Main();
+		var config:Config = {
+			sourceDirectory: ".",
+			sourceFile: null,
+			output: new haxe.io.Path("output/"),
+			outputMode: Markdown,
+			omitIds: false,
+		}
+
+		var handler = hxargs.Args.generate([
+			@doc("Sets the input directory")
+			"-i" => function(directory:String) {
+				config.sourceDirectory = directory;
+			},
+			@doc("Sets the output")
+			"-o" => function(output:String) {
+				config.output = new haxe.io.Path(output);
+				switch (output.split(".").pop()) {
+					case "epub": config.outputMode = EPub;
+					case "mobi": config.outputMode = Mobi;
+				}
+			},
+			@doc("Omit chapter and section IDs")
+			"--omit-ids" => function() {
+				config.omitIds = true;
+			},
+			@doc("Sets the output directory")
+			_ => function(file:String) {
+				config.sourceFile = file;
+			}
+		]);
+		handler.parse(Sys.args());
+		if (config.sourceFile == null) {
+			Sys.println('Missing source file');
+			Sys.println(handler.getDoc());
+			Sys.exit(1);
+		}
+		new Main(config);
 	}
 
 	var parser:LatexParser;
 	var out:String;
+	var config:Config;
 	var sectionInfo:SectionInfo;
 
-	function new() {
-		Sys.setCwd("../");
-		var sections = parse();
-		out = #if epub "md_epub/manual" #else "md/manual" #end;
+	function new(config:Config) {
+		this.config = config;
+		Sys.setCwd(config.sourceDirectory);
+		var sections = parse(config.sourceFile);
+		out = config.output.dir;
 
 		sectionInfo = collectSectionInfo(sections);
 
 		for (sec in sectionInfo.all) {
+			var subToc = makeSubToc(sec);
 			if (sec.content.length == 0 && sec.sub.length > 0) {
-				sec.content = sec.sub.map(function(sec) return sec.id + ": " +link(sec)).join("\n\n");
+				sec.content = subToc;
 			} else {
 				sec.content = process(sec.content);
 			}
+
+			sec.content = sec.content.replace("~subtoc~", subToc);
 		}
 
 		function generateTitleString(sec:Section, prefix = "##") {
-			return
-				#if epub '<a id="${url(sec)}"></a>\n' + #end
-				'$prefix ${sec.id} ${sec.title}\n\n';
+			var s = '$prefix ${sec.id.length > 0 ? sec.id + " " : ""}${sec.title}\n\n';
+			return switch (config.outputMode) {
+				case EPub | Mobi:
+					'<a id="${url(sec)}"></a>\n' + s;
+				case Markdown:
+					s;
+			}
 		}
 
 		for (sec in sectionInfo.all) {
@@ -56,15 +99,19 @@ class Main {
 		unlink(out);
 		sys.FileSystem.createDirectory(out);
 
+		var sectionContent = [];
+
 		for (i in 0...sectionInfo.all.length) {
 			var sec = sectionInfo.all[i];
 			sec.content = generateTitleString(sec) + sec.content + "\n";
-			#if !epub
+			if (config.outputMode == Markdown) {
 			sec.content += "\n---";
 			if (i != 0) sec.content += '\n\nPrevious section: ${link(sectionInfo.all[i - 1])}';
 			if (i != sectionInfo.all.length - 1) sec.content += '\n\nNext section: ${link(sectionInfo.all[i + 1])}';
-			#end
 			sys.io.File.saveContent('$out/${url(sec)}', sec.content);
+			} else {
+				sectionContent.push(sec.content);
+			}
 		}
 		generateDictionary();
 		generateTodo();
@@ -72,30 +119,37 @@ class Main {
 		function prepare(sec:Section) {
 			Reflect.deleteField(sec, "content");
 			Reflect.deleteField(sec, "parent");
-			Reflect.deleteField(sec, "flags");
 			sec.sub.iter(prepare);
 		}
 		sections.iter(prepare);
 		sys.io.File.saveContent('$out/sections.txt', haxe.Json.stringify(sections));
 
-		#if epub
-		generateEPub();
-		#end
+		switch (config.outputMode) {
+			case EPub | Mobi:
+				var filePath = '$out/content.md';
+				sys.io.File.saveContent(filePath, sectionContent.join("\n"));
+				generateEPub(filePath);
+			case Markdown:
+		}
 
-		#if mobi
-			#if !epub
-			#error "Generating .mobi requires -D epub to be defined"
-			#end
-			Sys.command("ebook-convert", ["HaxeManual.epub", "HaxeManual.mobi", "--no-inline-toc"]);
-		#end
+		switch (config.outputMode) {
+			case Mobi:
+				if (Sys.command("ebook-convert", ['$out/${config.output.file}.epub', '$out/${config.output.file}.mobi', "--no-inline-toc"]) != 0)
+					throw "ebook-convert failed";
+			case _:
+		}
 	}
 
-	function parse() {
-		LatexLexer.customEnvironments["flowchart"] = FlowchartHandler.handle;
-		var input = byte.ByteData.ofString(sys.io.File.getContent("HaxeDoc.tex"));
-		parser = new LatexParser(input, "HaxeDoc.tex");
+	function parse(source:String) {
+		LatexLexer.customEnvironments["flowchart"] = FlowchartHandler.handle.bind(config);
+		var input = byte.ByteData.ofString(sys.io.File.getContent(source));
+		parser = new LatexParser(input, source, config);
 		var sections = hxparse.Utils.catchErrors(input, parser.parse);
 		return sections;
+	}
+
+	function makeSubToc(sec:Section) {
+		return sec.sub.map(function(sec) return (sec.id.length > 0 ? sec.id + ": " : "") +link(sec)).join("\n\n");
 	}
 
 	function collectSectionInfo(sections:Array<Section>):SectionInfo {
@@ -144,7 +198,10 @@ class Main {
 		entries.sort(function(v1, v2) return Reflect.compare(v1.title.toLowerCase(), v2.title.toLowerCase()));
 		var definitions = [];
 		for (entry in entries) {
-			var anchorName = #if epub "dictionary.md-" +entry.label #else entry.label #end;
+			var anchorName = switch (config.outputMode) {
+				case Markdown: entry.label;
+				case EPub | Mobi: "dictionary.md-" +entry.label;
+			}
 			definitions.push('<a id="$anchorName" class="anch"></a>\n\n##### ${entry.title}\n${process(entry.content)}');
 		}
 		sys.io.File.saveContent('$out/dictionary.md', definitions.join("\n\n"));
@@ -159,9 +216,9 @@ class Main {
 		sys.io.File.saveContent('todo.txt', todo);
 	}
 
-	function generateEPub() {
-		var files = sectionInfo.all.map(function(sec) return out + "/" + url(sec));
-		Sys.command("pandoc", ["-t", "epub", "-f", "markdown_github", "-o", "HaxeManual.epub", "--table-of-contents", "--epub-metadata=epub_metadata.xml"].concat(files).concat(['$out/dictionary.md']));
+	function generateEPub(filePath:String) {
+		if (Sys.command("pandoc", ["-t", "epub", "-f", "markdown_github", "-o", '$out/${config.output.file}.epub', "--table-of-contents", "--epub-metadata=epub_metadata.xml", filePath].concat(['$out/dictionary.md'])) != 0)
+			throw "pandoc failed";
 	}
 
 	function isLinkable(sec:Section) {
@@ -170,9 +227,13 @@ class Main {
 
 	function link(sec:Section) {
 		if (!isLinkable(sec)) {
-			return #if epub '${sec.title}' #else '[${sec.title}](#)' #end;
+			return switch (config.outputMode) {
+				case EPub | Mobi: '${sec.title}';
+				case Markdown: '[${sec.title}](#)';
+			}
 		}
-		return '[${sec.title}](${linkPrefix}${url(sec)})';
+		var linkPrefix = config.outputMode == Markdown ? "" : "#";
+		return '[${sec.title}](${url(sec)})';
 	}
 
 	function process(s:String):String {
@@ -184,18 +245,13 @@ class Main {
 					} else {
 						'#';
 					}
-				case Definition:
-					#if epub
-					'dictionary.md-${escapeAnchor(label.name)}';
-					#else
+				case Definition if (config.outputMode == Markdown):
 					'dictionary.md#${escapeAnchor(label.name)}';
-					#end
+				case Definition:
+					'dictionary.md-${escapeAnchor(label.name)}';
 				case Item(i): "" + i;
-				#if epub
+				case Paragraph(sec, name) if (config.outputMode == Markdown): '${url(sec)}#${escapeAnchor(name)}';
 				case Paragraph(sec, name): '${url(sec)}';
-				#else
-				case Paragraph(sec, name): '${url(sec)}#${escapeAnchor(name)}'; // TODO for epub
-				#end
 			}
 		}
 		function labelLink(label:Label) {
@@ -203,11 +259,9 @@ class Main {
 				case Section(sec): link(sec);
 				case Definition: '[${label.name}](${labelUrl(label)})';
 				case Item(i): "" + i;
-				#if epub
+				case Paragraph(sec, name) if (config.outputMode == Markdown):
+					'[$name](${url(sec)}#${escapeAnchor(name)})';
 				case Paragraph(sec, name): '[$name](#${url(sec)})';
-				#else
-				case Paragraph(sec, name): '[$name](${url(sec)}#${escapeAnchor(name)})'; // TODO for epub
-				#end
 			}
 		}
 		function map(r, f) {
@@ -222,20 +276,23 @@ class Main {
 		return ~/~~([^~]+)~~/g.map(s1, map.bind(_, labelUrl));
 	}
 
+	function url(sec:Section) {
+		if (sec.flags["folded"] == "true") {
+			// TODO: nested folding?
+			return url(sec.parent) + "#" + escapeAnchor((sec.id.length > 0 ? sec.id + " " : "") + sec.title);
+		}
+		return switch (config.outputMode) {
+			case EPub | Mobi: sec.label;
+			case Markdown: sec.label + ".md";
+		}
+	}
+
 	static function escapeFileName(s:String) {
 		return s.replace("?", "").replace("/", "_").replace(" ", "_");
 	}
 
 	static function escapeAnchor(s:String) {
-		return s.toLowerCase().replace(" ", "-");
-	}
-
-	static function url(sec:Section) {
-		if (sec.flags["folded"] == "true") {
-			// TODO: nested folding?
-			return url(sec.parent) + "#" + escapeAnchor(sec.id + " " + sec.title);
-		}
-		return sec.label + ".md";
+		return s.toLowerCase().replace(" ", "-").replace(".", "");
 	}
 
 	static function unlink(path:String) {
