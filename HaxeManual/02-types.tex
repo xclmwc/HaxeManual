@@ -1,47 +1,48 @@
-\chapter{Types}
+\chapter{类型}
 \label{types}
 
-The Haxe Compiler employs a rich type system which helps detecting type-related errors in a program at compile-time. A type error is an invalid operation on a given type such as dividing by a String, trying to access a field of an Integer or calling a function with not enough (or too many) arguments.
+Haxe编译器有丰富的类型系统，可以更好地在编译期发现类型错误。类型错误是对类型的非法操作，如除以一个字符串，调用函数时缺少（或增加）参数。
 
-In some languages this additional safety comes at a price because programmers are forced to explicitly assign types to syntactic constructs:
+一些语言为了达到类型安全，需要显示声明变量类型：
 
 \begin{lstlisting}
 var myButton:MySpecialButton = new MySpecialButton(); // As3
 MySpecialButton* myButton = new MySpecialButton(); // C++ 
 \end{lstlisting}
 The explicit type annotations are not required in Haxe, because the compiler can \emph{infer} the type:
+Haxe中可以不显示声明变量类型，因为编译器可以推断出变量类型：
 
 \begin{lstlisting}
 var myButton = new MySpecialButton(); // Haxe
 \end{lstlisting}
-We will explore type inference in detail later in \Fullref{type-system-type-inference}. For now, it is sufficient to say that the variable \expr{myButton} in the above code is known to be an \emph{instance of class} \type{MySpecialButton}. 
+稍后我们会在\Fullref{type-system-type-inference}中详细探讨类型推断。从上面代码中可以知道\expr{myButton}是\type{MySpecialButton}的一个\emph{实例}。
 
-The Haxe type system knows seven type groups:
+Haxe类型系统有7种类型组：
 
 \begin{description}
- \item[\emph{Class instance}:] an object of a given class or interface
- \item[\emph{Enum instance}:] a value of a Haxe enumeration
- \item[\emph{Structure}:] an anonymous structure, i.e. a collection of named fields
- \item[\emph{Function}:] a compound type of several arguments and one return
- \item[\emph{Dynamic}:] a wildcard type which is compatible with any type
- \item[\emph{Abstract}:] a compile-time type which is represented by a different type at runtime
- \item[\emph{Monomorph}:] an unknown type which may later become a different type
+ \item[\emph{Class 对象}:] 类或接口的实例
+ \item[\emph{Enum 对象}:] Haxe枚举的实例
+ \item[\emph{Structure}:] 匿名结构体，例如：域（Field）的集合
+ \item[\emph{Function}:] 几个参数和一个返回值的复合类型\footnote{函数类型，译者注}
+ \item[\emph{Dynamic}:] 能与任何类型兼容的通配类型
+ \item[\emph{Abstract}:] 代表一种运行时类型的编译期类型
+ \item[\emph{Monomorph}:] 未知类型，将在后期推出
 \end{description}
 
-We will describe each of these type groups and how they relate to each other in the next chapters.
+后面的章节中会介绍每种类型组和它们之间的联系。
 
 \define{Compound Type}{define-compound-type}{A compound type is a type which has sub-types. This includes any type with \tref{type parameters}{type-system-type-parameters} and the \tref{function}{types-function} type.}
+\define{复合类型}{define-compound-type}{复合类型是一种包含子类型的类型，可以包含任何类型参数的类型和函数类型。}
 
-
-\section{Basic Types}
+\section{基础类型}
 \label{types-basic-types}
 
-\emph{Basic types} are \type{Bool}, \type{Float} and \type{Int}. They can easily be identified in the syntax by values such as
+\emph{基础类型}有\type{Bool（布尔）}, \type{Float（浮点）}和\type{Int（整型）}。在语法中很容易从以下值辨别：
 
 \begin{itemize}
-	\item \expr{true} and \expr{false} for \type{Bool},
-	\item \expr{1}, \expr{0}, \expr{-1} and \expr{0xFF0000} for \type{Int} and
-	\item \expr{1.0}, \expr{0.0}, \expr{-1.0}, \expr{1e10} for \type{Float}.
+	\item \expr{true}和\expr{false}是\type{Bool}型。
+	\item \expr{1}, \expr{0}, \expr{-1} and \expr{0xFF0000}是\type{Int}型。
+	\item \expr{1.0}, \expr{0.0}, \expr{-1.0}, \expr{1e10}是\type{Float}型.
 \end{itemize}
 
 Basic types are not \tref{classes}{types-class-instance} in Haxe. They are implemented as \tref{abstract types}{types-abstract} and are tied to the compiler's internal operator-handling as described in the following sections.
