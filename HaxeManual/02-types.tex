@@ -9,7 +9,6 @@ Haxe编译器有丰富的类型系统，可以更好地在编译期发现类型�
 var myButton:MySpecialButton = new MySpecialButton(); // As3
 MySpecialButton* myButton = new MySpecialButton(); // C++ 
 \end{lstlisting}
-The explicit type annotations are not required in Haxe, because the compiler can \emph{infer} the type:
 Haxe中可以不显示声明变量类型，因为编译器可以推断出变量类型：
 
 \begin{lstlisting}
@@ -31,7 +30,6 @@ Haxe类型系统有7种类型组：
 
 后面的章节中会介绍每种类型组和它们之间的联系。
 
-\define{Compound Type}{define-compound-type}{A compound type is a type which has sub-types. This includes any type with \tref{type parameters}{type-system-type-parameters} and the \tref{function}{types-function} type.}
 \define{复合类型}{define-compound-type}{复合类型是一种包含子类型的类型，可以包含任何类型参数的类型和函数类型。}
 
 \section{基础类型}
@@ -41,131 +39,129 @@ Haxe类型系统有7种类型组：
 
 \begin{itemize}
 	\item \expr{true}和\expr{false}是\type{Bool}型。
-	\item \expr{1}, \expr{0}, \expr{-1} and \expr{0xFF0000}是\type{Int}型。
-	\item \expr{1.0}, \expr{0.0}, \expr{-1.0}, \expr{1e10}是\type{Float}型.
+	\item \expr{1}，\expr{0}，\expr{-1}和\expr{0xFF0000}是\type{Int}型。
+	\item \expr{1.0}，\expr{0.0}，\expr{-1.0}，\expr{1e10}是\type{Float}型.
 \end{itemize}
 
-Basic types are not \tref{classes}{types-class-instance} in Haxe. They are implemented as \tref{abstract types}{types-abstract} and are tied to the compiler's internal operator-handling as described in the following sections.
+Haxe中的基础类型并不是\tref{类}{types-class-instance}。它们由\tref{抽象类型}{types-abstract}实现，由编译器内部处理，后面章节会详细说明。
 
-\subsection{Numeric types}
+\subsection{数字类型}
 \label{types-numeric-types}
 
-\define[Type]{Float}{define-float}{Represents a double-precision IEEE 64-bit floating point number.}
+\define[类型]{Float}{define-float}{IEEE 64位双精度浮点数}
 
-\define[Type]{Int}{define-int}{Represents an integral number.}
-While every \type{Int} can be used where a \type{Float} is expected (that is, \type{Int} \emph{is assignable to} or \emph{unifies with} \type{Float}), the reverse is not true: Assigning a \type{Float} to an \type{Int} might lose precision and is not allowed implicitly.
+\define[类型]{Int}{define-int}{整数}
+\type{Int}可以在任何时候转换为\type{Float}，但是反之不然。将\type{Float}转换为\type{Int}可能会损失精度，并且不允许隐式转换。
 
-\subsection{Overflow}
+\subsection{溢出}
 \label{types-overflow}
 
-For performance reasons, the Haxe Compiler does not enforce any overflow behavior. The burden of checking for overflows falls to the target platform. Here are some platform specific notes on overflow behavior:
+为了更好的性能，Haxe编译器不会强制改变任何溢出行为。检查溢出的工作交给了目标平台。以下是需要注意的几种平台溢出行为：
 
 \begin{description}
- \item[C++, Java, C\#, Neko, Flash:] 32-bit signed integers with usual overflow practices 
- \item[PHP, JS, Flash 8:] No native \emph{Int} type, loss of precision will occur if they reach their float limit (2\textsuperscript{52})
+ \item[C++, Java, C\#, Neko, Flash:] 有符号32位整型符合通常的溢出行为。
+ \item[PHP, JS, Flash 8:] 没有本地\emph{Int}类型, 当超过他们的浮点数限制时(2\textsuperscript{52})将会引起精度损失。
 \end{description}
 
 Alternatively, the \emph{haxe.Int32} and \emph{haxe.Int64} classes can be used to ensure correct overflow behavior regardless of the platform at the cost of additional computations depending on the platform.
+可以选择\emph{haxe.Int32}或者\emph{haxe.Int64}来避免各平台的溢出行为差异。
 
-\subsection{Numeric Operators}
+
+\subsection{运算符}
 \label{types-numeric-operators}
 
-\todo{make sure the types are right for inc, dec, negate, and bitwise negate}
-\todo{While introducing the different operations, we should include that information as well, including how they differ with the "C" standard, see http://haxe.org/manual/operators}
 This the list of numeric operators in Haxe, grouped by descending priority.
+以下是Haxe的运算符，按优先级递减排序：
 
 \begin{center}
 \begin{tabular}{| l | l | l | l | l |}
 	\hline
-	\multicolumn{5}{|c|}{Arithmetic} \\ \hline
-	Operator & Operation & Operand 1 & Operand 2 & Return \\ \hline
-	\expr{++}& increment & \type{Int} & N/A & \type{Int}\\
+	\multicolumn{5}{|c|}{四则运算} \\ \hline
+	运算符 & 运算 &  操作数1 & 操作数2 & 返回值 \\ \hline
+	\expr{++}& 递增 & \type{Int} & N/A & \type{Int}\\
 	& & \type{Float} & N/A & \type{Float}\\
-	\expr{--} & decrement & \type{Int} & N/A & \type{Int}\\
+	\expr{--} & 递减 & \type{Int} & N/A & \type{Int}\\
 	& & \type{Float} & N/A & \type{Float}\\
-	\expr{+} & addition & \type{Float} & \type{Float} & \type{Float} \\
+	\expr{+} & 加 & \type{Float} & \type{Float} & \type{Float} \\
 	& & \type{Float} & \type{Int} & \type{Float} \\
 	& & \type{Int} & \type{Float} & \type{Float} \\
 	& & \type{Int} & \type{Int} & \type{Int} \\
-	\expr{-} & subtraction & \type{Float} & \type{Float} & \type{Float} \\
+	\expr{-} & 减 & \type{Float} & \type{Float} & \type{Float} \\
 	& & \type{Float} & \type{Int} & \type{Float} \\
 	& & \type{Int} & \type{Float} & \type{Float} \\
 	& & \type{Int} & \type{Int} & \type{Int} \\
-	\expr{*} & multiplication & \type{Float} & \type{Float} & \type{Float} \\
+	\expr{*} & 乘 & \type{Float} & \type{Float} & \type{Float} \\
 	& & \type{Float} & \type{Int} & \type{Float} \\
 	& & \type{Int} & \type{Float} & \type{Float} \\
 	& & \type{Int} & \type{Int} & \type{Int} \\	
-	\expr{/} & division & \type{Float} & \type{Float} & \type{Float} \\
+	\expr{/} & 除 & \type{Float} & \type{Float} & \type{Float} \\
 	& & \type{Float} & \type{Int} & \type{Float} \\
 	& & \type{Int} & \type{Float} & \type{Float} \\
 	& & \type{Int} & \type{Int} & \type{Float} \\
-	\expr{\%} & modulo & \type{Float} & \type{Float} & \type{Float} \\
+	\expr{\%} & 取模 & \type{Float} & \type{Float} & \type{Float} \\
 	& & \type{Float} & \type{Int} & \type{Float} \\
 	& & \type{Int} & \type{Float} & \type{Float} \\
 	& & \type{Int} & \type{Int} & \type{Int} \\	 \hline
-	\multicolumn{5}{|c|}{Comparison} \\ \hline
-	Operator & Operation & Operand 1 & Operand 2 & Return \\ \hline
-	\expr{==} & equal & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
-	\expr{!=} & not equal & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
-	\expr{<} & less than & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
-	\expr{<=} & less than or equal & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
-	\expr{>} & greater than & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
-	\expr{>=} & great than or equal & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\ \hline
-	\multicolumn{5}{|c|}{Bitwise} \\ \hline
-	Operator & Operation & Operand 1 & Operand 2 & Return \\ \hline
-	\expr{\textasciitilde} & bitwise negation & \type{Int} & N/A & \type{Int} \\	
-	\expr{\&} & bitwise and & \type{Int} & \type{Int} & \type{Int} \\	
-	\expr{|} & bitwise or & \type{Int} & \type{Int} & \type{Int} \\	
-	\expr{\^} & bitwise xor & \type{Int} & \type{Int} & \type{Int} \\	
-	\expr{<<} & shift left & \type{Int} & \type{Int} & \type{Int} \\
-	\expr{>>} & shift right & \type{Int} & \type{Int} & \type{Int} \\
-	\expr{>>>} & unsigned shift right & \type{Int} & \type{Int} & \type{Int} \\ \hline
+	\multicolumn{5}{|c|}{比较} \\ \hline
+	运算符 & 运算 & 操作数1 & 操作数2 & 返回值 \\ \hline
+	\expr{==} & 等 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
+	\expr{!=} & 不等 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
+	\expr{<} & 小于 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
+	\expr{<=} & 小于等于 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
+	\expr{>} & 大于 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\
+	\expr{>=} & 大于等于 & \type{Float/Int} & \type{Float/Int} & \type{Bool} \\ \hline
+	\multicolumn{5}{|c|}{位运算} \\ \hline
+	运算符 & 运算 & 操作数1 & 操作数2 & 返回值 \\ \hline
+	\expr{\textasciitilde} & 取反 & \type{Int} & N/A & \type{Int} \\	
+	\expr{\&} & 与 & \type{Int} & \type{Int} & \type{Int} \\	
+	\expr{|} & 或 & \type{Int} & \type{Int} & \type{Int} \\	
+	\expr{\^} & 异或 & \type{Int} & \type{Int} & \type{Int} \\	
+	\expr{<<} & 左移 & \type{Int} & \type{Int} & \type{Int} \\
+	\expr{>>} & 右移 & \type{Int} & \type{Int} & \type{Int} \\
+	\expr{>>>} & 无符号右移 & \type{Int} & \type{Int} & \type{Int} \\ \hline
 \end{tabular}
 \end{center}
 
-\paragraph{Equality}
-
-\emph{For enums:}
+\emph{枚举类型（Enum）等于:}
 \begin{description}
-	\item[Enum without parameters] Are always represent the same value, so \expr{MyEnum.A == MyEnum.A}. 
-	\item[Enum with parameters] Can be compared with \expr{a.equals(b)} (which is a short for \expr{Type.enumEquals()}).
+	\item[无参数枚举] 一般代表相同值, 所以\expr{MyEnum.A == MyEnum.A}. 
+	\item[带参数枚举] 可以使用\expr{a.equals(b)}（\expr{Type.enumEquals()}的简单版） 比较.
 \end{description}
 
-\emph{Dynamic:}
-Comparison involving at least one Dynamic value is unspecifed and platform-specific.
+\emph{动态类型（Dynamic）等于:}
+比较包含至少一个未确定值时，其结果依赖于对应平台。
 
-\subsection{Bool}
+\subsection{布尔（Bool）}
 \label{types-bool}
 
-\define[Type]{Bool}{define-bool}{Represents a value which can be either \emph{true} or \emph{false}.}
+\define[类型]{布尔（Bool）}{define-bool}{只是\emph{true}或者\emph{false}的值。}
 
-Values of type \type{Bool} are a common occurence in \emph{conditions} such as \tref{\expr{if}}{expression-if} and \tref{\expr{while}}{expression-while}. The following \emph{operators} accept and return \type{Bool} values:
+布尔值常常用在\tref{\expr{if}}{expression-if}和\tref{\expr{while}}{expression-while}表达式中使用。
+以下操作符接收并返回布尔值：
 
 \begin{itemize}
-	\item \expr{\&\&} (and)
-	\item \expr{||} (or)
-	\item \expr{!} (not)
+	\item \expr{\&\&} (且)
+	\item \expr{||} (或)
+	\item \expr{!} (非)
 \end{itemize}
 
-Haxe guarantees that compound boolean expressions are evaluated from left to right and only as far as necessary at run-time. For instance, an expression like \expr{A \&\& B} will evaluate \expr{A} first and evaluate \expr{B} only if the evaluation of \expr{A} yielded \expr{true}. Likewise, the expressions \expr{A || B} will not evaluate \expr{B} if the evaluation of \expr{A} yielded \expr{true}, because the value of \expr{B} is irrelevant in that case. This is important in cases such as this:
+Haxe在计算布尔表达式时，会确保在运行时只会从左向右计算，并且只做必要的运算。例如：像\expr{A \&\& B}，会先计算\expr{A}，如果执行结果为\expr{true}才会计算\expr{B}的值。同样的，\expr{A || B}，如果\expr{A}运算结果为\expr{true}就不会再计算\expr{B}，因为这时候\expr{B}的值不会影响计算结果。在下面这种情况下尤为需要注意：
 
 \begin{lstlisting}
 if (object != null && object.field == 1) { }
 \end{lstlisting}
 
-Accessing \expr{object.field} if \expr{object} is \expr{null} would lead to a run-time error, but the check for \expr{object != null} guards against it.
-
+如果\expr{object}是\expr{null}，调用\expr{object.field}可能会引起运行时错误，但是\expr{object != null}的检查可以避免引发该错误。
 
 
 
 \subsection{Void}
 \label{types-void}
 
-\define[Type]{Void}{define-void}{Void denotes the absence of a type. It is used to express that something (usually a function) has no value.}
+\define[类型]{Void}{define-void}{Void代表没有类型，被用来表示没有值（一般用在function）。}
 
-\type{Void} is a special case in the type system because it is not actually a type. It is used to express the absence of a type, which applies mostly to function arguments and return types.
-We have already ``seen'' Void in the initial ``Hello World'' example:
-\todo{please review, doubled content}
+\type{Void}在类型系统中是一个特殊的存在，因为它根本不是一个类型。常常用在function参数和返回类型中代表没有类型。
+在“Hello World”示例代码中Void已经出现过了：
 
 \haxe{assets/HelloWorld.hx}
 

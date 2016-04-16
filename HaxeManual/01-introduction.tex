@@ -7,9 +7,9 @@
 
 Haxe是一门开源的高级语言，有自己的编译器，符合ECMScript语法规范\footnote{http://www.ecma-international.org/publications/standards/Ecma-327.htm}。并且，Haxe是跨平台的，可以编译为多种目标平台的原生语言，这样就可以保持只要一份代码，就能编译到多个平台。
 
-Haxe是强类型的，但如果需要也可以改变这种特性。因为有类型信息，Haxe可以在编译期发现错误，即使该错误是目标语言在运行期才会发现。并且，目标生成器可以利用类型信息生成优化的健壮代码。
+Haxe是强类型的，但如果需要也可以改变这种特性。因为有类型信息，Haxe可以在编译期发现错误，即使该错误只有在目标语言运行期才会发现。并且，目标生成器可以利用类型信息生成优化的健壮代码。
 
-目前可以编译为以下9中目标语言：
+目前可以编译为以下9种目标语言：
 
 \begin{center}
 \begin{tabular}{| l | l | l |}
@@ -30,7 +30,7 @@ Haxe是强类型的，但如果需要也可以改变这种特性。因为有类�
 本章剩余部分是Haxe的简介和自2005年诞生以来的发展历史。
 
 \todo{interact，unification该怎么翻译}
-\Fullref{types} 介绍Haxe的7中类型（and后觉得可以不翻译）。像\emph{结构体}，\emph{类型参数}，\emph{类型推断}等特性将在\Fullref{type-system}讲解。
+\Fullref{types} 介绍Haxe的7种类型（and后觉得可以不翻译）。像\emph{结构体}，\emph{类型参数}，\emph{类型推断}等特性将在\Fullref{type-system}讲解。
 
 \Fullref{class-field}讲解Haxe中的类。以及如何使用\emph{属性}，\emph{内联域}，\emph{泛型函数}。
 
@@ -38,7 +38,7 @@ Haxe是强类型的，但如果需要也可以改变这种特性。因为有类�
 
 \Fullref{lf}是Haxe语法部分的最后一章。讲解了一些Haxe的特性，如\emph{模式匹配}，\emph{字符串插值}，\emph{消除冗余代码}。
 
-接下来的部分是关于Haxe编译器的。\Fullref{compiler-usage}是关于编译器的基础用法，而\Fullref{cr-features}则介绍了更多的编译特性。最后会在\Fullref{macro}中详细讲解\emph{haxe macros}。Macro是一个非常强大的语言特性，能简化许多相同的任务处理。
+接下来的部分是关于Haxe编译器的。\Fullref{compiler-usage}是关于编译器的基础用法，而\Fullref{cr-features}则介绍了更多的编译特性。最后会在\Fullref{macro}中详细讲解\emph{haxe macros}。Macro非常强大，能简化许多重复代码。
 
 在接下来的章节中，\Fullref{std}将探索Haxe标准库中的关键数据类型及其操作方法；而\Fullref{haxelib}则会讲解Haxe库管理器Haxelib。
 
@@ -54,14 +54,14 @@ Haxe统一了许多平台差异，但是有时候还是需要对特定平台做�
 源代码样式：
 
 \begin{lstlisting}
-Haxe源代码
+Haxe`源代码`
 \end{lstlisting}
 偶尔，我们会用\target{JavaScript}源代码来展示Haxe是如何编译的。
 
 此外，主要在介绍一个新类型或者对于Haxe来说是新术语时，会在书中定义该术语，不过不会定义所有术语。例如：一个类的具体定义。
 定义样式：
 
-\define{定义名}{定义释义}{定义解释}
+\define[定义]{定义名}{定义释义}{定义解释}
 
 书中有些地方会有\emph{冷知识}。用于说明一些不太重要的信息。如Haxe发展中为什么做出这样的决定，Haxe过去版本的特性变化。你可以跳过这些知识。
 冷知识样式：
@@ -101,19 +101,19 @@ Haxe源代码
 	\item Haxe源文件后缀名为\ic{.hx}.
 	\item Haxe编译器是一个命令行工具，命令格式为\ic{-main Main}，\ic{--interp}.
 	\item Haxe有类（\type{Main}，大写字母开头），有方法（\expr{main}, 小写字母开始）。
-	\item 源文件名和类名相同 (in this case \type{Main.hx}). 
+	\item 源文件名和类名相同 (该实例中源文件名为\type{Main.hx}). 
 \end {itemize}
  
-\     section{历史 }
+\section{历史 }
 \label{introduction-haxe-history}
 \state{Reviewed}
 
 \todo{the in-house \emph{MTypes} language怎么翻译}
-Nicolas Cannasse\footnote{法国人，游戏《Evoland（进化之地）》原作者，译者注}是一名ActionScript 2编译器（\emph{MTASC}，Motion-Twin Action Script Compiler）和\emph{MTypes}（在面对对象中尝试类型推断的语言）的爱好者，并在2005年10月22日开始开发Haxe。Nicolas长期以来对设计编程语言的热爱，以及\emph{Motion-Twin}游戏开发者们不同技术融合所带来的新机遇下，诞生了一门新的语言。
+\emph{Nicolas Cannasse}\footnote{法国人，游戏《Evoland（进化之地）》原作者，译者注}是一名ActionScript 2编译器（\emph{MTASC}，Motion-Twin Action Script Compiler）和\emph{MTypes}（在面对对象中尝试类型推断的语言）的爱好者，并在2005年10月22日开始开发Haxe。Nicolas长期以来对设计编程语言的热爱，以及\emph{Motion-Twin}游戏开发者们不同技术融合所带来的新机遇下，诞生了一门新的语言。
 
 一开始Haxe是叫haXe，测试版本在2006年2月发布，可以编译为AVM\footnote{Adobe Virtual Machine}和Nicolas自己的虚拟机Neko\footnote{http://nekovm.org}字节码。
 
-Nicolas Cannasse一直作为Haxe项目的主导者直到现在，并在2006年5月发布了Haxe 1.0。作为第一个主要版本，提供了对\target{JavaScript}的支持，以及包含了部分Haxe的现在特性，如类型推断，structural sub-typing。
+\emph{Nicolas Cannasse}一直作为Haxe项目的主导者直到现在，并在2006年5月发布了Haxe 1.0。作为第一个主要版本，提供了对\target{JavaScript}的支持，以及包含了部分Haxe的现在特性，如类型推断，structural sub-typing。
 
 Haxe 1艰难地发展两年，发布了多个次要版本，在2006年8月添加\target{Flash AVM2}的支持，以及haxelib工具，在2007年3月添加\target{ActionScript 3}的支持。在那段时间中，一直都在奋力提升Haxe的稳定性，所以才有了多个修复bug的版本发布。
 
