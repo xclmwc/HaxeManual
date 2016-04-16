@@ -17,3 +17,6 @@ output/HaxeManual/ebook/dictionary.md
 output/HaxeManual/ebook/sections.txt
 HaxeManual/assets/bin/
 tests/RunTravis.n
+HaxeManual/HaxeManual.fdb_latexmk
+HaxeManual/HaxeManual.fls
+HaxeManual/HaxeManual.synctex.gz

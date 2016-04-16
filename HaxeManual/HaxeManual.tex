@@ -1,5 +1,17 @@
 \documentclass{../haxe}
+\makeatletter
+\let\@afterindentfalse\@afterindenttrue
+\@afterindenttrue
+\makeatother
+\setlength{\parindent}{2em}%中文缩进两个汉字位
+\usepackage{fontspec}
 
+\setmainfont[BoldFont={SimHei},ItalicFont={KaiTi}]{SimSun}
+\setsansfont[BoldFont=SimHei]{KaiTi}
+\setmonofont{NSimSun}
+
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt minus 0.1pt
 % todo-related
 \usepackage[left=4.7cm, right=2cm, top=2cm, bottom=4.2cm]{geometry}
 \usepackage[draft]{todonotes}
@@ -13,8 +25,9 @@
 			\begin{center}
 				~\\[3cm]
 				\includegraphics[scale=1.25]{../assets/logo.pdf}~\\[1cm]
-				{\huge \bfseries Haxe 3 Manual}\\[7cm]
+				{\huge \bfseries Haxe 3中文手册}\\[7cm]
 				Haxe Foundation\\
+				翻译：夏川力\\
 				\today
 			\end{center}
    \end{titlepage}
@@ -33,7 +46,7 @@
 % code example width for ebooks: 47
 
 \begin{document}
-\title{Haxe 3 Manual}
+\title{Haxe 3中文手册}
 \author{Haxe Foundation}
 \date{\today}
 \maketitle
