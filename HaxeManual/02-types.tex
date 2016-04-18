@@ -63,14 +63,12 @@ Haxe中的基础类型并不是\tref{类}{types-class-instance}。它们由\tref
  \item[PHP, JS, Flash 8:] 没有本地\emph{Int}类型, 当超过他们的浮点数限制时(2\textsuperscript{52})将会引起精度损失。
 \end{description}
 
-Alternatively, the \emph{haxe.Int32} and \emph{haxe.Int64} classes can be used to ensure correct overflow behavior regardless of the platform at the cost of additional computations depending on the platform.
 可以选择\emph{haxe.Int32}或者\emph{haxe.Int64}来避免各平台的溢出行为差异。
 
 
 \subsection{运算符}
 \label{types-numeric-operators}
 
-This the list of numeric operators in Haxe, grouped by descending priority.
 以下是Haxe的运算符，按优先级递减排序：
 
 \begin{center}
@@ -153,8 +151,6 @@ if (object != null && object.field == 1) { }
 
 如果\expr{object}是\expr{null}，调用\expr{object.field}可能会引起运行时错误，但是\expr{object != null}的检查可以避免引发该错误。
 
-
-
 \subsection{Void}
 \label{types-void}
 
@@ -165,232 +161,223 @@ if (object != null && object.field == 1) { }
 
 \haxe{assets/HelloWorld.hx}
 
-The function type will be explored in detail in the section \Fullref{types-function} but a quick preview helps here: The type of the function \expr{main} in the example above is \type{Void->Void}, which reads as ``it has no arguments and returns nothing''.
-Haxe does not allow fields and variables of type \type{Void} and will complain if an attempt at declaring such is made:
-\todo{review please, sounds weird}
+函数（function）类型将在\Fullref{types-function}详细说明。这里简单介绍下：上面例子中的\expr{main}函数的类型是\type{Void->Void}，表示没有参数和返回值。
+Haxe的变量或字段不能是\type{Void}类型，下面的声明是非法的：
 
 \begin{lstlisting}
-// Arguments and variables of type Void are not allowed
+// 参数和变量不能是Void
 var x:Void;
 \end{lstlisting}
 
-
-
-\section{Nullability}
+\section{空值（Nullability）}
 \label{types-nullability}
 
-\define{nullable}{define-nullable}{A type in Haxe is considered \emph{nullable} if \expr{null} is a valid value for it.}
+\define{可为空（nullable）}{define-nullable}{如果类型值可以被赋值为\expr{null}，那么这个类型就是可为空值的（\emph{nullable}）。}
 
-It is common for programming languages to have a single, clean definition for nullability. However, Haxe has to find a compromise in this regard due to the nature of Haxe's target languages: While some of them allow and; in fact, default to \expr{null} for anything, others do not even allow \expr{null} for certain types. This necessitates the distinction of two types of target languages:
+一般来说，编程语言对空值都有一个明确的定义。由于一些目标语言何值都可以是\expr{null}，一些语言则不允许有\expr{null}，Haxe不得不做出一定妥协。这样造成了两种情况：
 
-\define{Static target}{define-static-target}{Static targets employ their own type system where \expr{null} is not a valid value for basic types. This is true for the \target{Flash}, \target{C++}, \target{Java} and \target{C\#} targets.}
+\define{静态语言}{define-static-target}{静态语言使用自己的类型系统，没有\expr{null}值。对应语言：\target{Flash}，\target{C++}，\target{Java}，\target{C\#}}
 
-\define{Dynamic target}{define-dynamic-target}{Dynamic targets are more lenient with their types and allow \expr{null} values for basic types. This applies to the \target{JavaScript}, \target{PHP}, \target{Neko} and \target{Flash 6-8} targets.}
+\define{动态语言}{define-dynamic-target}{动态语言对类型的要求则要宽松很多，允许基础值为\expr{null}。对应语言：\target{JavaScript}，\target{PHP}，\target{Neko}，\target{Flash 6-8}}
 
-There is nothing to worry about when working with \expr{null} on dynamic targets; however, static ones may require some thought. For starters, basic types are initialized to their default values.
-\todo{for starters...please review}
+动态语言中使用\expr{null}不会有任何问题。不过在静态语言中就需要做些处理了，基础类型初始化时会使用默认值。
 
-\define{Default values}{define-default-value}{
-	Basic types have the following default values on static targets:
+\define{默认值}{define-default-value}{
+	静态语言中使用以下默认值：
 	\begin{description}
 		\item[\type{Int}:] \expr{0}
-		\item[\type{Float}:] \expr{NaN} on \target{Flash}, \expr{0.0} on other static targets
+		\item[\type{Float}:] \target{Flash}中是\expr{NaN}，其他则是\expr{0.0}。
 		\item[\type{Bool}:] \expr{false}
 	\end{description}
 }
 
-As a consequence, the Haxe Compiler does not allow the assignment of \expr{null} to a basic type on static targets. In order to achieve this, the basic type has to be wrapped as \type{Null$<$T$>$}:
+如果需要在静态语言中使用\expr{null}值，那么则需要用\type{Null$<$T$>$}包裹基础类型：
 
 \begin{lstlisting}
-// error on static platforms
-var a:Int = null;
-var b:Null<Int> = null; // allowed
+// 静态语言中
+var a:Int = null;// 非法声明
+var b:Null<Int> = null; // 合法声明
 \end{lstlisting}
 
-Similarly, basic types cannot be compared to \expr{null} unless wrapped:
+同样的，如果没有用Null标签，基础类型不能和\expr{null}比较：
 
 \begin{lstlisting}
+// 静态语言中
 var a : Int = 0;
-// error on static platforms
-if( a == null ) { ... }
+if( a == null ) { ... } // 非法
 var b : Null<Int> = 0;
-if( b != null ) { ... } // allowed
+if( b != null ) { ... } // 合法
 \end{lstlisting}
 
-This restriction extends to all situations where \tref{unification}{type-system-unification} is performed.
+在\tref{类型转换unification}中也符合以上限制。
 
-\define[Type]{\expr{Null<T>}}{define-null-t}{On static targets the types \type{Null<Int>}, \type{Null<Float>} and \type{Null<Bool>} can be used to allow \expr{null} as a value. On dynamic targets this has no effect. \type{Null<T>} can also be used with other types in order to document that \expr{null} is an allowed value.}
+\define[类型]{\expr{Null<T>}}{define-null-t}{静态语言中可以为\type{Null<Int>}，\type{Null<Float>}，\type{Null<Bool>}赋值\expr{null}。动态语言中则不会改变原本行为。\type{Null<T>}也可以用于其他类型来提供\expr{null}值。}
 
-If a \expr{null}-value is ``hidden'' in \type{Null$<$T$>$} or \type{Dynamic} and assigned to a basic type, the default value is used:
+静态语言中将\expr{null}值的变量赋值给基础类型变量，将会使用默认值赋值：
 
 \begin{lstlisting}
 var n : Null<Int> = null;
 var a : Int = n;
-trace(a); // 0 on static platforms
+trace(a); // `静态语言中`a`为`0
 \end{lstlisting}
 
-
-
-\subsection{Optional Arguments and Nullability}
+\subsection{可选参数和空值}
 \label{types-nullability-optional-arguments}
 
-Optional arguments also have to be accounted for when considering nullability.
-
-In particular, there must be a distinction between \emph{native} optional arguments which are not nullable and Haxe-specific optional arguments which might be. The distinction is made by using the question-mark optional argument:
-
+可选参数也需要注意空值。
+特别是，可为空的Haxe可选参数和不能为空的本地语言可选参数必然会有一些区别。当使用问好标记可选参数时会造成这些不同：
 \begin{lstlisting}
-// x is a native Int (not nullable)
+// x是本地Int类型 (不能为null)
 function foo(x : Int = 0) {}
-// y is Null<Int> (nullable)
+// y是Null<Int> (可以为null)
 function bar( ?y : Int) {}
-// z is also Null<Int>
+// z也是Null<Int>
 function opt( ?z : Int = -1) {}
 \end{lstlisting}
-\todo{Is there a difference between \type{?y : Int} and \type{y : Null$<$Int$>$} or can you even do the latter? Some more explanation and examples with native optional and Haxe optional arguments and how they relate to nullability would be nice.}
 
-\trivia{Argument vs. Parameter}{In some other programming languages, \emph{argument} and \emph{parameter} are used interchangeably.  In Haxe, \emph{argument} is used when referring to methods and \emph{parameter} refers to \Fullref{type-system-type-parameters}.}
+\trivia{Argument和Parameter}{在某些语言中, \emph{argument}和\emph{parameter}没有什么区别。在Haxe中\emph{argument}指的的方法参数，\emph{parameter}则是\Fullref{type-system-type-parameters}。不过翻译时都翻译为参数。}
 
-\section{Class Instance}
+\section{类}
 \label{types-class-instance}
 
-Similar to many object-oriented languages, classes are the primary data structure for the majority of programs in Haxe. Each Haxe class has an explicit name, an implied path and zero or more class fields. Here we will focus on the general structure of classes and their relations, while leaving the details of class fields for \Fullref{class-field}.
-\todo{please review future tense}
+和其他面对对象语言一样，类是Haxe大部分程序中的主要数据载体。Haxe中每个类都有显式类名，隐式路径，以及0个以上字段。这里我们只大体讲解类的结构和类之间的关系，类字段将在\Fullref{class-field}中讲解。
 
-The following code example serves as basis for the remainder of this section:
+以下代码作为本节的基础代码：
 
 \haxe{assets/Point.hx}
 
-Semantically, this class represents a point in discrete 2-dimensional space - but this is not important here. Let us instead describe the structure:
+在语义上，这个类代表了一个二维空间的点。不过这里我们更关心的是类的结构：
 
 \begin{itemize}
-	\item The keyword \expr{class} denotes that we are declaring a class.
-	\item \type{Point} is the name of the class and could be anything conforming to the \tref{rules for type identifiers}{define-identifier}.
-	\item Enclosed in curly braces \expr{$\left\{\right\}$} are the class fields,
-	\item Which consist of two \emph{variable} fields \expr{x} and \expr{y} of type \type{Int},
-	\item followed by a special \emph{function} field named \expr{new}, which is the \emph{constructor} of the class,
-	\item as well as a normal function \expr{toString}.
+	\item \expr{class}关键字声明了一个类。
+	\item \type{Point}是类名，Haxe类的命名规则在\tref{类型命名规则}{define-identifier}中说明。
+	\item \expr{$\left\{\right\}$}中是类的字段。
+	\item 其中包含两个\emph{属性}字段，\type{Int}型的\expr{x}和\expr{y}。
+	\item \expr{new}方法则是该类的\emph{构造方法}。
+	\item 还有一个\expr{toString}方法.
 \end{itemize}
-There is a special type in Haxe which is compatible with all classes:
+Haxe中有一个特殊的类型可以和所有类兼容：
+\todo{也许可以翻译为泛型？}
 
-\define[Type]{\expr{Class$<$T$>$}}{define-class-t}{This type is compatible with all class types which means that all classes (not their instances) can be assigned to it. At compile-time, \type{Class<T>} is the common base type of all class types. However, this relation is not reflected in generated code.
+\define[类型]{\expr{Class$<$T$>$}}{define-class-t}{该类型能和所有类兼容，所以任何类都可以被赋值给该类型（不是他们的实例）。在编译器， \type{Class<T>}是所有类的共同基础类型。但是在生成的代码中，这个关系不能被反射。
 
-This type is useful when an API requires a value to be \emph{a} class, but not a specific one. This applies to several methods of the \tref{Haxe reflection API}{std-reflection}.}
+当API中需要一个值是一个不明确的类（不是类的实例），该类型非常有用。这个适用于\tref{Haxe反射API}{std-reflection}中的几种情况。}
 
-\subsection{Class constructor}
+\subsection{类构造方法}
 \label{types-class-constructor}
 
-Instances of classes are created by calling the class constructor - a process commonly referred to as \emph{instantiation}. Another name for class instances is \emph{object}. Nevertheless, we prefer the term class instance to emphasize the analogy between classes/class instances and \tref{enums/enum instances}{types-enum-instance}. 
+类的实例由构造方法生成，一个生成\emph{实例}的过程。实例的另外一个名称是\emph{对象}。然而，我们更喜欢用实例这个称呼来强调类实例和\tref{枚举实例}类似。
 
 \begin{lstlisting}
 var p = new Point(-1, 65);
 \end{lstlisting}
-This will yield an instance of class \type{Point}, which is assigned to a variable named \expr{p}. The constructor of \type{Point} receives the two arguments \expr{-1} and \expr{65} and assigns them to the instance variables \expr{x} and \expr{y} respectively (compare its definition in \Fullref{types-class-instance}). We will revisit the exact meaning of the \expr{new} expression later in the section \ref{expression-new}. For now, we just think of it as calling the class constructor and returning the appropriate object.
+这会生成一个\type{Point}的实例，并被赋值给\expr{p}。\type{Point}构造方法接收两个参数，\expr{-1}和\expr{65}，分别并赋值给实例的\expr{x}和\expr{y}属性(在\Fullref{types-class-instance}中查看源代码)。我们会在\ref{expression-new}节中了解\expr{new}的确切含义。现在我们只需要知道它是构造方法并返回一个合适的对象。
 
 
-
-\subsection{Inheritance}
+\subsection{继承}
 \label{types-class-inheritance}
 
-Classes may inherit from other classes, which in Haxe is denoted by the \expr{extends} keyword:
+类可以继承其他类的结构，Haxe中继承的关键字是\expr{extends}：
 
 \haxe{assets/Point3.hx}
-This relation is often described as "is-a": Any instance of class \type{Point3} is also an instance of \type{Point}. \type{Point} is then known as the \emph{parent class} of \type{Point3}, which is a \emph{child class} of \type{Point}. A class may have many child classes, but only one parent class. The term ``a parent class of class X'' usually refers to its direct parent class, the parent class of its parent class and so on.
+任何\type{Point3}的实例也是\type{Point}的实例。\type{Point}是\type{Point3}的\emph{父类}，\type{Point3}是\type{Point}的\emph{子类}。一个类可以有许多子类，但是只有一个父类。一个类的父类可以指这个类的父类，爷类，等等，等等。
 
-The code above is very similar to the original \type{Point} class, with two new constructs being shown:
+上面的代码和\type{Point}类很像，有两个新结构：
 \begin{itemize}
- \item \expr{extends Point} denotes that this class inherits from class \type{Point}
- \item \expr{super(x, y)} is the call to the constructor of the parent class, in this case \expr{Point.new}
+ \item \expr{extends Point}表明该类继承于\type{Point}
+ \item \expr{super(x, y)}调用父类的构造方法，这个例子中就是\expr{Point.new}
 \end{itemize}
-It is not necessary for child classes to define their own constructors, but if they do, a call to \expr{super()} is mandatory. Unlike some other object-oriented languages, this call can appear anywhere in the constructor code and does not have to be the first expression.
+可以不用定义子类的构造方法，但如果定义了，子类的构造方法中必须调用\expr{super()}。和某些面向对象语言不一样的是，super可以出现在构造方法中的任何地方，不必是第一句表达式。
 
-A class may override \tref{methods}{class-field-method} of its parent class, which requires the explicit \expr{override} keyword. The effects and restrictions of this are detailed in \Fullref{class-field-overriding}.
+一个类可以重写父类的\tref{方法}，关键字是\expr{override}。关于使用限制和效果将在\Fullref{class-field-overriding}详细讲解。
 
 
-\subsection{Interfaces}
+\subsection{接口}
 \label{types-interfaces}
 
 An interface can be understood as the signature of a class because it describes the public fields of a class. Interfaces do not provide implementations but pure structural information:
+接口可以被理解为一个类的特征说明，因为它描述了一个类的公开字段。接口不提供具体实现，只描述结构信息：
 
 \begin{lstlisting}
 interface Printable {
 	public function toString():String;
 }
 \end{lstlisting}
-The syntax is similar to classes, with the following exceptions:
+和类的语法很像，不过有以下区别：
 
 \begin{itemize}
-	\item \expr{interface} keyword is used instead of \expr{class} keyword
-	\item functions do not have any \tref{expressions}{expression}
-	\item every field must have an explicit type
+	\item \expr{interface}关键字而不是\expr{class}关键字
+	\item 方法里没有任何\tref{表达式}{expression}
+	\item 每个字段都必须有类型声明
 \end{itemize}
-Interfaces, unlike \tref{structural subtyping}{type-system-structural-subtyping}, describe a \emph{static relation} between classes. A given class is only considered to be compatible to an interface if it explicitly states so:
+接口和\tref{结构化子类型}{type-system-structural-subtyping}不一样，它描述了类之间的\emph{静态关系}。如果一个类被描述成这样，那么它会被认为与接口兼容：
+
 
 \begin{lstlisting}
 class Point implements Printable { }
 \end{lstlisting}
-Here, the \expr{implements} keyword denotes that \type{Point} has a "is-a" relationship to \type{Printable}, i.e. each instance of \type{Point} is also an instance of \type{Printable}. While a class may only have one parent class, it may implement multiple interfaces through multiple \expr{implements} keywords:
+这里，\expr{implements}关键字表明了\type{Point}相当于\type{Printable}的子类。例：每个\type{Point}的实例都是\type{Printable}的实例，但是一个类只能有一个父类，却可以有很多接口。用多个\expr{implements}引入多个接口：
 
 \begin{lstlisting}
 class Point implements Printable
   implements Serializable
 \end{lstlisting}
 
-The compiler checks if the \expr{implements} assumption holds. That is, it makes sure the class actually does implement all the fields required by the interface. A field is considered implemented if the class or any of its parent classes provide an implementation.
+编译器会检查类中是否包含了\expr{implements}中的所有字段。如果类或者其父类提供了字段的实现，该字段就被认为已经实现了。
 
-Interface fields are not limited to methods. They can be variables and properties as well:
+接口字段不只是方法。也可以是变量和属性：
 
 \haxe{assets/InterfaceWithVariables.hx}
 
-Interfaces can extend multiple other interfaces using the \expr{extends} keyword:
+接口可以继承其他多个接口，使用\expr{extends}关键字：
 \begin{lstlisting}
 interface Debuggable extends Printable extends Serializable
 \end{lstlisting}
 
+\trivia{继承语法}{Haxe 3.0之前的版本多个\expr{implements}关键字需要用逗号分开。我们决定使用Java规范然后就去掉了逗号。这是Haxe 2和Haxe 3的区别。}
 
-\trivia{Implements Syntax}{Haxe versions prior to 3.0 required multiple \expr{implements} keywords to be separated by a comma. We decided to adhere to the de-facto standard of Java and got rid of the comma. This was one of the breaking changes between Haxe 2 and 3.}
-
-
-\section{Enum Instance}
+\section{枚举实例}
 \label{types-enum-instance}
 
-Haxe provides powerful enumeration (short: enum) types, which are actually an \emph{algebraic data type} (ADT)\footnote{\url{http://en.wikipedia.org/wiki/Algebraic_data_type}}. While they cannot have any \tref{expressions}{expression}, they are very useful for describing data structures:
+Haxe提供了非常强大的枚举类型，实际上是\emph{代数数据类型}（ADT）\footnote{\url{https://en.wikipedia.org/wiki/Algebraic_data_type}}，不过不能含有任何\tref{表达式}{expression}，它们很适合用来描述数据结构：
 
 \haxe{assets/Color.hx}
 Semantically, this enum describes a color which is either red, green, blue or a specified RGB value. The syntactic structure is as follows:
+这个枚举包含了红绿蓝和带有数值的RGB颜色。语法结构如下：
 \begin{itemize}
-	\item The keyword \expr{enum} denotes that we are declaring an enum.
-	\item \type{Color} is the name of the enum and could be anything conforming to the rules for \tref{type identifiers}{define-identifier}.
-	\item Enclosed in curly braces \expr{$\left\{\right\}$} are the \emph{enum constructors},
-	\item which are \expr{Red}, \expr{Green} and \expr{Blue} taking no arguments,
-	\item as well as \expr{Rgb} taking three \type{Int} arguments named \expr{r}, \expr{g} and \expr{b}.
+	\item \expr{enum}关键字声明枚举类型。
+	\item \type{Color}是枚举名，命名规则符合\tref{类型标识符}{define-identifier}。
+	\item \expr{$\left\{\right\}$}里包含的是\emph{枚举构造方法}。
+	\item \expr{Red}，\expr{Green}和\expr{Blue}没有参数。 
+	\item \expr{Rgb}有三个\type{Int}型参数：\expr{r}，\expr{g}，\expr{b}。
 \end{itemize}
 The Haxe type system provides a type which unifies with all enum types:
+Haxe提供了一个类型统一所有枚举类型：
 
-\define[Type]{\expr{Enum$<$T$>$}}{define-enum-t}{This type is compatible with all enum types. At compile-time, \type{Enum<T>} can bee seen as the common base type of all enum types. However, this relation is not reflected in generated code.} 
-\todo{Same as in 2.2, what is \type{Enum$<$T$>$} syntax?}
+\define[类型]{\expr{Enum$<$T$>$}}{define-enum-t}{这个类型和所有枚举类型兼容。在编译期，\type{Enum<T>}可以看作所有枚举类型的公共基础类型。不过这种关系在生成的代码中是不能被反射的。} 
 
-\subsection{Enum Constructor}
+\subsection{枚举构造方法}
 \label{types-enum-constructor}
 
-Similar to classes and their constructors, enums provide a way of instantiating them by using one of their constructors. However, unlike classes, enums provide multiple constructors which can easily be used through their name:
+与类的构造方法类似，枚举用构造方法实例化。不过，与类不同的是，枚举提供了多个构造方法，并且只需要方法名就能调用：
 
 \begin{lstlisting}
 var a = Red;
 var b = Green;
 var c = Rgb(255, 255, 0);
 \end{lstlisting}
-In this code the type of variables \expr{a}, \expr{b} and \expr{c} is \type{Color}. Variable \expr{c} is initialized using the \expr{Rgb} constructor with arguments.
-\todo{list arguments}
+变量\expr{a}，\expr{b}，\expr{c}是Color的实例。变量\expr{c}使用\expr{Rgb}构造方法初始化，255，255，0是其构造方法参数。
 
-All enum instances can be assigned to a special type named \type{EnumValue}.
+所有枚举实例都能被赋值给一个特别类型\type{EnumValue}。
 
-\define[Type]{EnumValue}{define-enumvalue}{EnumValue is a special type which unifies with all enum instances. It is used by the Haxe Standard Library to provide certain operations for all enum instances and can be employed in user-code accordingly in cases where an API requires \emph{an} enum instance, but not a specific one.}
+\define[类型]{EnumValue}{define-enumvalue}{EnumValue是一个统一所有枚举实例的特别类型。Haxe标志库用来提供一个对所有枚举的操作，用户代码中可以用在不能确定是什么枚举实例的地方。}
 
-It is important to distinguish enum types and enum constructors, as this example demonstrates:
+需要特别注意枚举类型和枚举构造方法：
 
 \haxe{assets/EnumUnification.hx}
 
 If the commented line is uncommented, the program does not compile because \expr{Red} (an enum constructor) cannot be assigned to a variable of type \type{Enum<Color>} (an enum type). The relation is analogous to a class and its instance.
+
 
 \trivia{Concrete type parameter for \type{Enum$<$T$>$}}{One of the reviewers of this manual was confused about the difference between \type{Color} and \type{Enum<Color>} in the example above. Indeed, using a concrete type parameter there is pointless and only serves the purpose of demonstration. Usually we would omit the type there and let \tref{type inference}{type-system-type-inference} deal with it.
 
